@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import SingleJobCard from "./components/card/jobs/single-job-card.jsx";
 import { Provider } from "react-redux";
 import { store } from "./store.js";
+import NavBar from "./pages/jobs/find-job-page.jsx"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
