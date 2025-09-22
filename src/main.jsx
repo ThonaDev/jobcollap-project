@@ -6,12 +6,14 @@ import SingleJobCard from "./components/card/jobs/single-job-card.jsx";
 import { Provider } from "react-redux";
 import { store } from "./store.js";
 import NavBar from "./pages/jobs/find-job-page.jsx"
+import FindJob from "./pages/jobs/find-job-page.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
       <App />
       <SingleJobCard />
+      <FindJob></FindJob>
     </Provider>
   </StrictMode>
 );
