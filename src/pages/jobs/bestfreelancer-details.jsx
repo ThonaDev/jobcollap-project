@@ -6,15 +6,17 @@ import { AiOutlineGlobal } from 'react-icons/ai';
 import { FiMapPin } from 'react-icons/fi'; // Change this line
 import { LuPhone } from "react-icons/lu";
 import { LuMail } from "react-icons/lu";
-import { AiFillGithub } from "react-icons/ai";
-import { FiLinkedin } from "react-icons/fi";
-import { RiTelegram2Line } from "react-icons/ri";
+import { VscGithub } from "react-icons/vsc";
+import { TiSocialLinkedinCircular } from "react-icons/ti";
+import { RiTelegramLine } from "react-icons/ri";
 
 
 function FreeLancerDetail() {
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow-md font-sans text-[#1A5276]">
+   <div className="bg-[#F5F5F5] min-h-screen p-4">
+    <div className="mx-[105px]">
+       <div className="max-w-5xl mx-auto p-6 rounded-lg font-sans text-[#1A5276]">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-4">
@@ -25,7 +27,7 @@ function FreeLancerDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-         <button className="bg-[#1A5276] text-white border border-[#1A5276] px-4 py-2 rounded-[10px] hover:bg-white hover:text-[#1A5276] h-[50px]">
+ <button className="bg-[#1A5276] text-white border border-[#1A5276] px-4 py-2 rounded-[10px] hover:bg-white hover:text-[#1A5276] h-[45px] whitespace-nowrap">
   Send Mail
 </button>
 
@@ -87,20 +89,20 @@ function FreeLancerDetail() {
           <hr />
 
           {/* Social Media */}
-          <div className="flex gap-3 mt-4">
-          <button className="bg-gray-100 p-2 rounded-[10px] hover:bg-[#D1DCE4]">
-          {/* Github Icon */}
-            <AiFillGithub size={25} color="#1A5276" />
-          </button>
-          <button className="bg-gray-100 p-2 rounded-[10px] hover:bg-[#D1DCE4]">
-          {/* LinkedIn Icon */}
-            <FiLinkedin size={20} color="#1A5276"/>
-          </button>
-          <button className="bg-gray-100 p-2 rounded-[10px] hover:bg-[#D1DCE4]">
-          {/* Telegram Icon */}
-            <RiTelegram2Line size={25} color="#1A5276" />
-          </button>
-        </div>
+              <div className="flex gap-3 mt-4">
+  <button className="flex items-center justify-center w-12 h-12 bg-[#D1DCE4] rounded-[10px] hover:bg-[#BDC9D6] transition-colors duration-200 cursor-pointer">
+    {/* VscGithub icon looks good at a larger size */}
+    <VscGithub size={25} color="#1A5276"/>
+  </button>
+  <button className="flex items-center justify-center w-12 h-12 bg-[#D1DCE4] rounded-[10px] hover:bg-[#BDC9D6] transition-colors duration-200 cursor-pointer">
+    {/* LinkedIn icon also needs to be large to match */}
+    <TiSocialLinkedinCircular size={35} color="#1A5276"/>
+  </button>
+  <button className="flex items-center justify-center w-12 h-12 bg-[#D1DCE4] rounded-[10px] hover:bg-[#BDC9D6] transition-colors duration-200 cursor-pointer">
+    {/* Telegram icon matches others at this size */}
+    <RiTelegramLine size={30} color="#1A5276"/>
+  </button>
+</div>
         </div>
 
         {/* Right Column */}
@@ -169,6 +171,8 @@ function FreeLancerDetail() {
 
       </div>
     </div>
+    </div>
+   </div>
   );
 }
 

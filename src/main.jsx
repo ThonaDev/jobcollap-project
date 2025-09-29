@@ -7,13 +7,15 @@ import { Provider } from "react-redux";
 import { store } from "./store.js";
 import NavBar from "./pages/jobs/find-job-page.jsx"
 import FindJob from "./pages/jobs/find-job-page.jsx";
+import FreeLancerDetail from "./pages/jobs/bestfreelancer-details.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
-      <App />
-      <SingleJobCard />
-      <FindJob></FindJob>
+      {/* <App /> */}
+      {/* <SingleJobCard /> */}
+      <FreeLancerDetail></FreeLancerDetail>
+      {/* <FindJob></FindJob> */}
     </Provider>
   </StrictMode>
 );
