@@ -16,8 +16,8 @@ createRoot(document.getElementById("root")).render(
       {/* <App /> */}
       {/* <SingleJobCard /> */}
       {/* <FreeLancerDetail></FreeLancerDetail> */}
-       {/* <FindJob></FindJob>  */}
-      <SuccessStats></SuccessStats>
+       <FindJob></FindJob> 
+      {/* <SuccessStats></SuccessStats> */}
     </Provider>
   </StrictMode>
 );
