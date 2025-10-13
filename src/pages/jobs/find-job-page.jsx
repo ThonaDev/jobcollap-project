@@ -111,7 +111,7 @@ const JobCard = ({ jobTitle, postDate, location, salary, Photos, jobUuid }) => {
                 <hr className="border-t border-gray-200 mb-2" />
                 <div className="flex items-center justify-between pb-4 pt-2">
                     <span className="text-xl font-bold text-[#1A5276]">{salary}$</span>
-                    <button className="bg-[#1A5276] text-white border border-[#1A5276] px-4 py-2 rounded-lg hover:bg-white hover:text-[#1A5276] transition-colors duration-200 text-sm">
+                    <button className="bg-[#1A5276] text-white border border-[#1A5276] px-4 py-2 rounded-[50px] hover:bg-white hover:text-[#1A5276] transition-colors duration-200 text-sm">
                         Apply
                     </button>
                 </div>

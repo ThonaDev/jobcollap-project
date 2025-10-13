@@ -9,15 +9,21 @@ import NavBar from "./pages/jobs/find-job-page.jsx"
 import FindJob from "./pages/jobs/find-job-page.jsx";
 import FreeLancerDetail from "./pages/jobs/bestfreelancer-details.jsx";
 import SuccessStats from "./pages/jobs/successStates.jsx";
+import JobDetail from "./pages/jobs/job-details-page.jsx";
+import Footer from "./components/layouts/footer.jsx";
+import BenefitsData from "./pages/jobs/benefit.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
       {/* <App /> */}
       {/* <SingleJobCard /> */}
-      {/* <FreeLancerDetail></FreeLancerDetail> */}
-       <FindJob></FindJob> 
+      {/* <FreeLancerDetail></FreeLancerDetail>  */}
+      <FindJob></FindJob>    
+      {/* <JobDetail></JobDetail> */}
       {/* <SuccessStats></SuccessStats> */}
+      {/* <Footer></Footer> */}
+      {/* <BenefitsData></BenefitsData> */}
     </Provider>
   </StrictMode>
 );
