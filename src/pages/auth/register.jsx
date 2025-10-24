@@ -161,7 +161,7 @@ export default function Register() {
         "Account created! Please check your email to verify your registration. Logging in shortly...",
         {
           position: "top-center",
-          autoClose: 40000,
+          autoClose: 35000,
         }
       );
 
