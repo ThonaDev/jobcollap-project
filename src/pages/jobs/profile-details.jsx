@@ -40,7 +40,7 @@ const profileSchema = z.object({
   bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
 });
 
-// --- Helper Components (Kept for completeness) ---
+// --- Helper Components ---
 const FormInput = ({
   label,
   id,
@@ -48,6 +48,7 @@ const FormInput = ({
   register,
   errors,
   placeholder = "",
+  disabled = false,
 }) => (
   <div className="flex flex-col">
     <label htmlFor={id} className="text-sm font-normal text-[#1A5276] mb-1">
@@ -58,9 +59,10 @@ const FormInput = ({
       id={id}
       {...register(id)}
       placeholder={placeholder}
+      disabled={disabled}
       className={`px-3 py-2 border border-[#1A5276] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A5276] text-[#1A5276] transition duration-150 ease-in-out hover:border-[#149AC5] ${
         errors[id] ? "border-red-500" : ""
-      }`}
+      } ${disabled ? "bg-gray-100 cursor-not-allowed opacity-70" : ""}`}
     />
     {errors[id] && (
       <p className="text-red-500 text-sm mt-1">{errors[id].message}</p>
@@ -210,17 +212,15 @@ const ProfileDetail = () => {
     "https://placehold.co/200x200"
   );
   const [hasFallback, setHasFallback] = useState(false);
-  // State to hold the original file name after selection/upload (client-side only)
-  const [originalCvFileName, setOriginalCvFileName] = useState(null); 
+  const [originalCvFileName, setOriginalCvFileName] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Derive the display name for the CV
   const DEFAULT_CV_PLACEHOLDER = "Drag and drop your CV here or click to upload (PDF)";
-  const cvDisplayName = originalCvFileName // Priority 1: Client-side selected name
+  const cvDisplayName = originalCvFileName
     ? originalCvFileName
-    : latestCV?.fileUrl?.split("/").pop() // Priority 2: Server's UUID name
+    : latestCV?.fileUrl?.split("/").pop()
     ? latestCV.fileUrl.split("/").pop()
-    : DEFAULT_CV_PLACEHOLDER; // Fallback to placeholder
+    : DEFAULT_CV_PLACEHOLDER;
 
   useEffect(() => {
     if (userData) {
@@ -236,7 +236,7 @@ const ProfileDetail = () => {
           : ""
         : "";
       reset({
-        fullName: userData.fullname || "",
+        fullName: userData.name || "",
         email: userData.email || "",
         contact: userData.phoneNumber || "",
         jobTitle: userData.positions?.[0]?.title || "",
@@ -256,7 +256,6 @@ const ProfileDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, reset]);
 
-  // Handle server CV data on mount/refetch - only logging
   useEffect(() => {
     if (latestCV) {
       console.log("Latest CV fetched from server:", latestCV.fileUrl);
@@ -264,7 +263,6 @@ const ProfileDetail = () => {
       console.error("CV fetch error:", cvError);
     }
   }, [latestCV, cvError]);
-
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -285,11 +283,10 @@ const ProfileDetail = () => {
 
   const handleCVChange = (eventFile) => {
     const file = eventFile || cvInputRef.current?.files[0];
-
     if (file) {
       if (file.type !== "application/pdf") {
         toast.error("Please upload a valid PDF file.");
-        cvInputRef.current.value = null; 
+        cvInputRef.current.value = null;
         setOriginalCvFileName(null);
         return;
       }
@@ -299,10 +296,7 @@ const ProfileDetail = () => {
         setOriginalCvFileName(null);
         return;
       }
-      
-      // Store the original file name in state immediately upon selection
       setOriginalCvFileName(file.name);
-      
     } else {
       setOriginalCvFileName(null);
     }
@@ -326,9 +320,7 @@ const ProfileDetail = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) {
-      handleCVChange(file); // Pass the file from drop event
-      
-      // Manually assign the files to the input ref for submission
+      handleCVChange(file);
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
       cvInputRef.current.files = dataTransfer.files;
@@ -367,14 +359,14 @@ const ProfileDetail = () => {
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("Profile photo upload successful:", uploadResult);
         profileUrl = uploadResult.previewLink;
-        setProfileImage(profileUrl); 
+        setProfileImage(profileUrl);
       }
 
       let cvUrl = "";
-      let uploadedCvOriginalName = null; // Store name for client-side persistence
+      let uploadedCvOriginalName = null;
       if (cvInputRef.current?.files[0]) {
         const file = cvInputRef.current.files[0];
-        uploadedCvOriginalName = file.name; // Capture original name
+        uploadedCvOriginalName = file.name;
         console.log("Uploading CV:", file.name);
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("CV upload successful:", uploadResult);
@@ -387,46 +379,43 @@ const ProfileDetail = () => {
         cvInputRef.current.value = null;
       }
 
-      // Build JSON body with only changed fields
       const jsonBody = {};
-      if (dirtyFields.fullName && data.fullName) {
-        jsonBody.name = data.fullName;
+      if (dirtyFields.fullName) {
+        jsonBody.name = data.fullName || "";
       }
       if (dirtyFields.email && data.email) {
         jsonBody.email = data.email;
       }
-      if (dirtyFields.contact && data.contact) {
-        jsonBody.phoneNumber = data.contact;
+      if (dirtyFields.contact) {
+        jsonBody.phoneNumber = data.contact || "";
       }
-      if (dirtyFields.jobTitle && data.jobTitle) {
+      if (dirtyFields.jobTitle) {
         const positionUuid =
           positionsData?.find((pos) => pos.title === data.jobTitle)?.uuid || "";
         jsonBody.positions = positionUuid ? [positionUuid] : [];
       }
-      if (dirtyFields.gender && data.gender) {
-        jsonBody.gender = data.gender.toUpperCase();
+      if (dirtyFields.gender) {
+        jsonBody.gender = data.gender ? data.gender.toUpperCase() : "";
       }
-      if (dirtyFields.skills && data.skills) {
+      if (dirtyFields.skills) {
         const skillUuids = data.skills
-          .map(
+          ?.map(
             (skillName) =>
               skillsData?.find((skill) => skill.skillName === skillName)?.uuid
           )
-          .filter(Boolean);
+          .filter(Boolean) || [];
         jsonBody.skillUuids = skillUuids;
       }
-      if (dirtyFields.bio && data.bio) {
-        jsonBody.bio = data.bio;
+      if (dirtyFields.bio) {
+        jsonBody.bio = data.bio || "";
       }
       if (profileUrl && profileUrl !== userData?.profile) {
         jsonBody.profile = profileUrl;
       }
-      // Always include required fields to avoid breaking the API
       jsonBody.coverPhoto = userData?.coverPhoto || "";
       jsonBody.isOtpAuthentication = false;
       jsonBody.expectedSalary = 0;
 
-      // Only send update if there are changes
       if (Object.keys(jsonBody).length > 3 || profileUrl !== userData?.profile) {
         console.log("Submitting user update JSON:", jsonBody);
         const updateResult = await updateUser({
@@ -437,7 +426,6 @@ const ProfileDetail = () => {
         toast.success("Profile updated successfully!");
       }
 
-      // CV Creation Logic
       if (cvUrl) {
         const cvBody = {
           userUuid: userId,
@@ -447,14 +435,10 @@ const ProfileDetail = () => {
         const cvResult = await createCV(cvBody).unwrap();
         console.log("CV creation successful:", cvResult);
         toast.success("CV saved successfully!");
-        
-        // Update the client-side state with the original name after 
-        // successful API submission to persist the display name until refresh.
         if (uploadedCvOriginalName) {
-             setOriginalCvFileName(uploadedCvOriginalName); 
+          setOriginalCvFileName(uploadedCvOriginalName);
         }
       }
-      
     } catch (error) {
       console.error(
         "Error:",
@@ -490,7 +474,6 @@ const ProfileDetail = () => {
     }
   };
 
-  // Prepare position options
   const positionOptions = positionsData
     ? [
         ...positionsData.map((pos) => ({
@@ -501,7 +484,6 @@ const ProfileDetail = () => {
       ]
     : [{ value: "Others", label: "Others" }];
 
-  // Prepare skill options
   const skillOptions = skillsData
     ? [
         ...skillsData.map((skill) => ({
@@ -587,6 +569,7 @@ const ProfileDetail = () => {
               register={register}
               errors={errors}
               placeholder="Email"
+              disabled={true}
             />
             <FormInput
               label="Contact"
@@ -690,7 +673,7 @@ const ProfileDetail = () => {
             />
           </div>
         </div>
-        
+
         {/* --- Upload CV --- */}
         <div className="pt-4">
           <h2 className="text-xl font-medium text-[#1A5276] mb-3">Upload CV</h2>
@@ -711,23 +694,21 @@ const ProfileDetail = () => {
               id="cvUpload"
               className="hidden"
               accept="application/pdf"
-              onChange={(e) => handleCVChange(e.target.files[0])} 
+              onChange={(e) => handleCVChange(e.target.files[0])}
             />
             <label
               htmlFor="cvUpload"
               className="flex flex-col items-center justify-center text-[#1A5276] cursor-pointer"
             >
               <FiUploadCloud className="w-8 h-8 mb-2" />
-              <span className="font-medium text-md">
-                {cvDisplayName}
-              </span>
+              <span className="font-medium text-md">{cvDisplayName}</span>
             </label>
           </div>
           <div className="mt-3 text-center">
             <button
               type="button"
               onClick={handleViewCV}
-              disabled={!latestCV?.fileUrl} 
+              disabled={!latestCV?.fileUrl}
               className={`flex items-center mx-auto justify-center px-4 py-2 bg-[#1A5276] text-white font-medium text-md rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out ${
                 !latestCV?.fileUrl ? "opacity-50 cursor-not-allowed" : ""
               }`}

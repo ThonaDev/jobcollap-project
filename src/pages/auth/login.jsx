@@ -228,7 +228,7 @@ export default function Login() {
               disabled={isSubmitting || isSocialLoading}
               className="w-40 bg-[#154360] text-white py-2 rounded-full mt-6 hover:bg-[#149AC5] transition disabled:opacity-50 sm:w-11/12 text-center font-semibold"
             >
-              {isSubmitting ? "Logging In..." : "Login"}
+              {isSubmitting ? "Login..." : "Login"}
             </button>
           </form>
 

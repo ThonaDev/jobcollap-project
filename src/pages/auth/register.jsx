@@ -34,10 +34,10 @@ const strongPasswordRegex =
 
 const registerSchema = z
   .object({
-    name: z
+    userName: z
       .string()
       .nonempty("Please fill out this field")
-      .min(3, "Name must be at least 3 characters"),
+      .min(3, "User name must be at least 3 characters"),
     email: z
       .string()
       .nonempty("Please fill out this field")
@@ -94,7 +94,7 @@ export default function Register() {
   } = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
+      userName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -103,9 +103,9 @@ export default function Register() {
 
   const onSubmit = async (data) => {
     try {
-      const { name, email, password } = data;
-      console.log("Submitting registration:", { name, email, password }); // Debug log
-      const result = await registerUser({ name, email, password }).unwrap();
+      const { userName, email, password } = data;
+      console.log("Submitting registration:", { userName, email, password }); // Debug log
+      const result = await registerUser({ userName, email, password }).unwrap();
       console.log("Registration result:", result); // Debug log
       toast.success("Please check your email to verify your registration", {
         position: "top-center",
@@ -150,10 +150,10 @@ export default function Register() {
           : new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const { email, displayName } = result.user;
-      const name = displayName || email.split("@")[0];
+      const userName = displayName || email.split("@")[0];
       const socialPassword = generateSecurePassword();
 
-      const registerPayload = { name, email, password: socialPassword };
+      const registerPayload = { userName, email, password: socialPassword };
       console.log("Registering social user:", registerPayload); // Debug log
       await registerUser(registerPayload).unwrap();
 
@@ -175,7 +175,7 @@ export default function Register() {
             setCredentials({
               accessToken: loginResponse.data.accessToken,
               refreshToken: loginResponse.data.refreshToken,
-              user: { name, email },
+              user: { userName, email },
             })
           );
           storeAccessToken(loginResponse.data.accessToken);
@@ -273,17 +273,17 @@ export default function Register() {
             >
               <div className="w-full sm:w-11/12">
                 <label className="block text-md font-bold text-[#1A5276]">
-                  Name
+                  Full Name
                 </label>
                 <input
                   type="text"
-                  {...register("name")}
+                  {...register("userName")}
                   className="w-full p-2 border border-[#1A5276] rounded-lg mt-1 bg-white focus:ring-2 focus:ring-[#149AC5] outline-none"
                   placeholder="Enter full name"
                 />
-                {errors.name && (
+                {errors.userName && (
                   <p className="text-red-600 text-sm mt-1">
-                    {errors.name.message}
+                    {errors.userName.message}
                   </p>
                 )}
               </div>
