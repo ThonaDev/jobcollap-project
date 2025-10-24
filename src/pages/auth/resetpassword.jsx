@@ -4,7 +4,6 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-
 import VerifyImage from "../../assets/verify.png";
 import JOBCollapLogo from "../../assets/jobCollapLogo.png";
 
@@ -15,12 +14,20 @@ export default function ResetPassword() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState(""); // ✅ inline error
+  const [confirmError, setConfirmError] = useState("");   // ✅ inline error
   const navigate = useNavigate();
 
-  // ✅ Handle form submission
+  // ✅ Password regex
+  const strongPasswordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
   const handleReset = async (e) => {
     e.preventDefault();
     const forgotPasswordToken = localStorage.getItem("forgotPasswordToken");
+
+    setPasswordError(""); // reset errors
+    setConfirmError("");
 
     if (!code || !newPassword || !confirmPassword) {
       toast.warn("⚠️ Please fill in all fields.", {
@@ -30,11 +37,15 @@ export default function ResetPassword() {
       return;
     }
 
+    if (!strongPasswordRegex.test(newPassword)) {
+      setPasswordError(
+        "Password must be strong (at least 8 characters, include uppercase, lowercase, number, and symbol)"
+      );
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
-      toast.error("❌ Passwords do not match!", {
-        position: "top-center",
-        autoClose: 2500,
-      });
+      setConfirmError("Passwords do not match!");
       return;
     }
 
@@ -51,17 +62,17 @@ export default function ResetPassword() {
         }
       );
 
-      // ✅ Check for success
       if (response.status === 200) {
-        toast.success("✅ Password updated successfully! Redirecting to login...", {
-          position: "top-center",
-          autoClose: 2000,
-        });
+        toast.success(
+          "✅ Password updated successfully! Redirecting to login...",
+          {
+            position: "top-center",
+            autoClose: 2000,
+          }
+        );
 
-        // ✅ Clear stored token
         localStorage.removeItem("forgotPasswordToken");
 
-        // ✅ Redirect to login after short delay
         setTimeout(() => {
           navigate("/login");
         }, 2200);
@@ -119,9 +130,7 @@ export default function ResetPassword() {
 
             {/* New Password */}
             <div className="w-full sm:w-11/12 relative">
-              <label className="block text-md font-bold text-[#1A5276]">
-                New Password
-              </label>
+              <label className="block text-md font-bold text-[#1A5276]">New Password</label>
               <input
                 type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
@@ -134,15 +143,16 @@ export default function ResetPassword() {
                 className="absolute top-10 right-3 text-gray-600"
                 onClick={() => setShowNewPassword(!showNewPassword)}
               >
-                {showNewPassword ? < FaEye size={18} /> : <FaEyeSlash size={18} />}
+                {showNewPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
+              {passwordError && (
+                <p className="text-red-600 text-sm mt-1">{passwordError}</p>
+              )}
             </div>
 
             {/* Confirm Password */}
             <div className="w-full sm:w-11/12 relative">
-              <label className="block text-md font-bold text-[#1A5276]">
-                Confirm Password
-              </label>
+              <label className="block text-md font-bold text-[#1A5276]">Confirm Password</label>
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm new password"
@@ -157,6 +167,7 @@ export default function ResetPassword() {
               >
                 {showConfirmPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
+              {confirmError && <p className="text-red-600 text-sm mt-1">{confirmError}</p>}
             </div>
 
             {/* Update Button */}
@@ -178,4 +189,3 @@ export default function ResetPassword() {
     </div>
   );
 }
-
