@@ -21,6 +21,7 @@ const PUBLIC_ENDPOINTS = [
 ];
 
 const baseQueryCustom = fetchBaseQuery({
+  // Access the environment variable (VITE_BASE_URL)
   baseUrl: import.meta.env.VITE_BASE_URL,
   prepareHeaders: (headers, { endpoint }) => {
     if (!PUBLIC_ENDPOINTS.includes(endpoint)) {

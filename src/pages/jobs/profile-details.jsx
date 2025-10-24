@@ -40,7 +40,7 @@ const profileSchema = z.object({
   bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
 });
 
-// --- Helper Components ---
+// --- Helper Components (Kept for completeness) ---
 const FormInput = ({
   label,
   id,
@@ -210,8 +210,17 @@ const ProfileDetail = () => {
     "https://placehold.co/200x200"
   );
   const [hasFallback, setHasFallback] = useState(false);
-  const [cvFileName, setCvFileName] = useState(null);
+  // State to hold the original file name after selection/upload (client-side only)
+  const [originalCvFileName, setOriginalCvFileName] = useState(null); 
   const [isDragging, setIsDragging] = useState(false);
+
+  // Derive the display name for the CV
+  const DEFAULT_CV_PLACEHOLDER = "Drag and drop your CV here or click to upload (PDF)";
+  const cvDisplayName = originalCvFileName // Priority 1: Client-side selected name
+    ? originalCvFileName
+    : latestCV?.fileUrl?.split("/").pop() // Priority 2: Server's UUID name
+    ? latestCV.fileUrl.split("/").pop()
+    : DEFAULT_CV_PLACEHOLDER; // Fallback to placeholder
 
   useEffect(() => {
     if (userData) {
@@ -227,7 +236,7 @@ const ProfileDetail = () => {
           : ""
         : "";
       reset({
-        fullName: userData.name || "",
+        fullName: userData.fullname || "",
         email: userData.email || "",
         contact: userData.phoneNumber || "",
         jobTitle: userData.positions?.[0]?.title || "",
@@ -244,16 +253,18 @@ const ProfileDetail = () => {
         setProfileImage(profileUrl);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, reset]);
 
+  // Handle server CV data on mount/refetch - only logging
   useEffect(() => {
     if (latestCV) {
-      console.log("Latest CV:", latestCV);
-      console.log("CV fileUrl:", latestCV.fileUrl);
+      console.log("Latest CV fetched from server:", latestCV.fileUrl);
     } else if (cvError) {
       console.error("CV fetch error:", cvError);
     }
   }, [latestCV, cvError]);
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -272,23 +283,28 @@ const ProfileDetail = () => {
     }
   };
 
-  const handleCVChange = (file) => {
+  const handleCVChange = (eventFile) => {
+    const file = eventFile || cvInputRef.current?.files[0];
+
     if (file) {
       if (file.type !== "application/pdf") {
         toast.error("Please upload a valid PDF file.");
+        cvInputRef.current.value = null; 
+        setOriginalCvFileName(null);
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
         toast.error("CV file size must be less than 10MB.");
+        cvInputRef.current.value = null;
+        setOriginalCvFileName(null);
         return;
       }
-      setCvFileName(file.name);
-      cvInputRef.current.files = new DataTransfer().files; // Clear input
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-      cvInputRef.current.files = dataTransfer.files; // Assign new file
+      
+      // Store the original file name in state immediately upon selection
+      setOriginalCvFileName(file.name);
+      
     } else {
-      setCvFileName(null);
+      setOriginalCvFileName(null);
     }
   };
 
@@ -310,16 +326,17 @@ const ProfileDetail = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) {
-      handleCVChange(file);
+      handleCVChange(file); // Pass the file from drop event
+      
+      // Manually assign the files to the input ref for submission
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      cvInputRef.current.files = dataTransfer.files;
     }
   };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
-  };
-
-  const triggerCVInput = () => {
-    cvInputRef.current.click();
   };
 
   const handleViewCV = () => {
@@ -350,11 +367,14 @@ const ProfileDetail = () => {
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("Profile photo upload successful:", uploadResult);
         profileUrl = uploadResult.previewLink;
+        setProfileImage(profileUrl); 
       }
 
       let cvUrl = "";
+      let uploadedCvOriginalName = null; // Store name for client-side persistence
       if (cvInputRef.current?.files[0]) {
         const file = cvInputRef.current.files[0];
+        uploadedCvOriginalName = file.name; // Capture original name
         console.log("Uploading CV:", file.name);
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("CV upload successful:", uploadResult);
@@ -364,6 +384,7 @@ const ProfileDetail = () => {
         }
         cvUrl = uploadResult.previewLink;
         toast.success("CV uploaded successfully!");
+        cvInputRef.current.value = null;
       }
 
       // Build JSON body with only changed fields
@@ -416,6 +437,7 @@ const ProfileDetail = () => {
         toast.success("Profile updated successfully!");
       }
 
+      // CV Creation Logic
       if (cvUrl) {
         const cvBody = {
           userUuid: userId,
@@ -425,7 +447,14 @@ const ProfileDetail = () => {
         const cvResult = await createCV(cvBody).unwrap();
         console.log("CV creation successful:", cvResult);
         toast.success("CV saved successfully!");
+        
+        // Update the client-side state with the original name after 
+        // successful API submission to persist the display name until refresh.
+        if (uploadedCvOriginalName) {
+             setOriginalCvFileName(uploadedCvOriginalName); 
+        }
       }
+      
     } catch (error) {
       console.error(
         "Error:",
@@ -661,7 +690,8 @@ const ProfileDetail = () => {
             />
           </div>
         </div>
-        {/* Upload CV */}
+        
+        {/* --- Upload CV --- */}
         <div className="pt-4">
           <h2 className="text-xl font-medium text-[#1A5276] mb-3">Upload CV</h2>
           <div
@@ -681,7 +711,7 @@ const ProfileDetail = () => {
               id="cvUpload"
               className="hidden"
               accept="application/pdf"
-              onChange={(e) => handleCVChange(e.target.files[0])}
+              onChange={(e) => handleCVChange(e.target.files[0])} 
             />
             <label
               htmlFor="cvUpload"
@@ -689,9 +719,7 @@ const ProfileDetail = () => {
             >
               <FiUploadCloud className="w-8 h-8 mb-2" />
               <span className="font-medium text-md">
-                {cvFileName
-                  ? cvFileName
-                  : "Drag and drop your CV here or click to upload (PDF)"}
+                {cvDisplayName}
               </span>
             </label>
           </div>
@@ -699,7 +727,10 @@ const ProfileDetail = () => {
             <button
               type="button"
               onClick={handleViewCV}
-              className="flex items-center justify-center px-4 py-2 bg-[#1A5276] text-white font-medium text-md rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out"
+              disabled={!latestCV?.fileUrl} 
+              className={`flex items-center mx-auto justify-center px-4 py-2 bg-[#1A5276] text-white font-medium text-md rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out ${
+                !latestCV?.fileUrl ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <FiEye className="w-5 h-5 mr-2" />
               View my current CV

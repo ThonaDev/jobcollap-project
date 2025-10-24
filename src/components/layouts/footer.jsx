@@ -3,117 +3,112 @@ import { MdMailOutline } from 'react-icons/md';
 import { TiSocialFacebookCircular } from "react-icons/ti";
 import { LiaTelegram } from "react-icons/lia";
 import { AiOutlineYoutube } from "react-icons/ai";
-import { GrLocation } from 'react-icons/gr';
-import { NavLink } from 'react-router-dom';
-import istadLogo from '../../assets/istad.png'; // Import ISTAD logo
-import jobCollabLogo from '../../assets/jobCollapLogo.png'; // Import JOBCOLLAB logo
+import { GrLocation } from "react-icons/gr";
 
 const Footer = () => {
+  // Define a color variable consistent with the lucide icon styling
+  const ICON_COLOR = "text-[#3b5998]"; 
+  const ACCENT_HOVER_COLOR = "hover:text-[#FF7A00]";
+
   return (
-    <footer className="py-8 text-[#1A5276] font-Poppins">
-      <div className="container mx-auto px-8">
+    <footer className="bg-[#EFF7FF] py-8 text-[#1A5276] font-sans">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Grid/Flex Container: Stacks on small screens, becomes a row on medium screens */}
+        <div className="flex flex-col md:flex-row flex-wrap justify-between items-center md:items-start space-y-8 md:space-y-0 md:space-x-4 lg:space-x-16">
 
-        {/* Main Flex/Grid Container */}
-        <div className="
-          flex flex-col space-y-8
-          md:grid md:grid-cols-2 md:gap-x-12 md:gap-y-10 md:space-y-0
-          lg:flex lg:flex-row lg:justify-between lg:items-start
-        ">
-
-{/* 1. Organized and Sponsored By */}
-<div className="flex flex-col items-center text-center space-x-1">
-  <h4 className="font-bold text-lg mb-5.5 whitespace-nowrap">
-    Organized and Sponsored By
-  </h4>
-  <div className="w-32 h-auto sm:w-40">
-    <img src={istadLogo} alt="ISTAD" className="w-40 h-full object-contain" />
-  </div>
-</div>
-
-
-
-          {/* 2. Prepared By */}
-          <div className="flex flex-col items-center text-center">
-            <h4 className="font-bold text-lg mb-8 whitespace-nowrap">Prepared By</h4>
-            <div className="w-32 h-auto sm:w-40">
-              <img src={jobCollabLogo} alt="JOBCOLLAB" className="w-full h-full object-contain" />
+          {/* Organized and sponsored By */}
+          {/* Use md:w-1/5 and lg:w-1/6 to allow Contact/Follow sections more space */}
+          <div className="flex-1 w-full md:w-auto md:max-w-[20%] flex flex-col items-center text-center">
+            <h4 className="font-bold text-lg mb-4 whitespace-nowrap">Organized and sponsored By</h4>
+            {/* Adjust logo size for better mobile scaling */}
+            <div className="w-24 h-24 sm:w-30 sm:h-30"> 
+              <img src="ISTAD.png" alt="ISTAD" className="w-full h-full object-contain" />
             </div>
           </div>
 
-          {/* 3. Quick Links */}
-          <div className="text-center md:text-center lg:text-left">
+          {/* Prepared By */}
+          <div className="flex-1 w-full md:w-auto md:max-w-[20%] flex flex-col items-center text-center">
+            <h4 className="font-bold text-lg mb-4 whitespace-nowrap">Prepared By</h4>
+            {/* Adjust logo size for better mobile scaling */}
+            <div className="w-32 h-auto sm:w-40">
+              <img src="JOBCOLLAB.png" alt="JOBCOLLAB" className="w-full h-full object-contain" />
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="flex-1 w-full md:w-auto md:max-w-[20%] text-center md:text-left">
             <h4 className="font-bold text-lg mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><NavLink to="/" className="hover:underline hover:text-[#FF7A00]">Home</NavLink></li>
-              <li><NavLink to="/jobs" className="hover:underline hover:text-[#FF7A00]">Find Jobs</NavLink></li>
-              <li><NavLink to="/about" className="hover:underline hover:text-[#FF7A00]">About Us</NavLink></li>
-              <li><NavLink to="/contact" className="hover:underline hover:text-[#FF7A00]">Contact Us</NavLink></li>
+              <li><a href="#" className="hover:underline hover:text-[#FF7A00]">Home</a></li>
+              <li><a href="#" className="hover:underline hover:text-[#FF7A00]">Find Jobs</a></li>
+              <li><a href="#" className="hover:underline hover:text-[#FF7A00]">About Us</a></li>
+              <li><a href="#" className="hover:underline hover:text-[#FF7A00]">Contact Us</a></li>
             </ul>
           </div>
 
-          {/* 4. Contact Us */}
-          <div className="text-center md:text-center lg:text-left">
-            <h4 className="font-bold text-lg mb-4">Contact Us</h4>
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-start space-x-2 justify-center lg:justify-start md:justify-center">
-                <MdMailOutline className="text-xl flex-shrink-0 mt-0.5 hover:text-[#FF7A00]" />
-                <span className="text-left">info@jobcollap.com</span>
+          {/* Contact Us & Follow Us Container - Takes up more space on large screens */}
+          {/* Changed to flex-col on small, then flex-row on medium to keep contact/follow side-by-side */}
+          <div className="w-full md:w-auto md:max-w-[40%] flex flex-col sm:flex-row md:flex-row md:space-x-8 lg:space-x-12 mt-8 md:mt-0">
+
+
+            {/* Contact Us */}
+           <div className="flex-1 text-center sm:text-left min-w-[250px] mb-8 sm:mb-0">
+              <h4 className="font-bold text-lg mb-4">Contact Us</h4>
+              <div className="flex flex-col space-y-2">
+                {/* Email Address */}
+                <div className="flex items-start space-x-2 justify-center sm:justify-start"> 
+                  {/* Adjusted mt-1 to mt-0.5 for slight alignment shift */}
+                  <MdMailOutline className={`text-xl flex-shrink-0 mt-0.5`} /> 
+                  <span className="text-left">info@jobcollap.com</span> 
+                </div>
+                
+                {/* Address section (UPDATED TO USE MdOutlineLocationOn) */}
+                <div className="flex items-start space-x-2 text-[#1A5276] justify-center sm:justify-start">
+                  
+                  <GrLocation 
+                    className={`text-xl flex-shrink-0 mt-0.5`} 
+                  />
+
+                  {/* Address text container */}
+                  <address className="not-italic text-left mb-1">
+                    <span className="block">#24, St.562, Boeung Kak,</span>
+                    <span className="block">Toul Kork, Phnom Penh,</span>
+                    <span className="block">Cambodia</span>
+                  </address>
+                </div>
               </div>
-              <div className="flex items-start space-x-2 justify-center lg:justify-start md:justify-center">
-                <GrLocation className="text-xl flex-shrink-0 mt-0.5 hover:text-[#FF7A00]" />
-                <address className="not-italic text-left mb-1">
-                  <span className="block">#24, St.562, Boeung Kak,</span>
-                  <span className="block">Toul Kork, Phnom Penh,</span>
-                  <span className="block">Cambodia</span>
-                </address>
+            </div>
+
+            {/* Follow Us */}
+            {/* Ensure Follow Us is centered on small/tablet, but aligned right or left depending on available space on large screens */}
+            <div className="flex-1 text-center">
+              <h4 className="font-bold text-lg mb-4">Follow Us</h4>
+              <div className="flex justify-center sm:justify-center space-x-2.5 text-2xl ">
+                {/* TiSocialFacebookCircular is already a React Icon, keeping it */}
+                <a href="#" aria-label="Facebook" className={` transition-colors duration-300 text-right `}>
+                  <TiSocialFacebookCircular />
+                </a>
+                {/* LiaTelegram is already a React Icon, keeping it */}
+                <a href="#" aria-label="Telegram" className={` transition-colors duration-300`}>
+                  <LiaTelegram />
+                </a>
+                {/* AiOutlineYoutube is already a React Icon, keeping it */}
+                <a href="#" aria-label="YouTube" className={` transition-colors duration-300`}>
+                  <AiOutlineYoutube />
+                </a>
               </div>
             </div>
           </div>
-
-          {/* Follow Us (Mobile & Tablet) */}
-          <div className="flex flex-col items-center order-last md:order-none lg:hidden">
-            <h4 className="font-bold text-lg mb-4">Follow Us</h4>
-            <div className="flex justify-center space-x-2.5 text-2xl">
-              <a href="#" aria-label="Facebook" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <TiSocialFacebookCircular />
-              </a>
-              <a href="#" aria-label="Telegram" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <LiaTelegram />
-              </a>
-              <a href="#" aria-label="YouTube" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <AiOutlineYoutube />
-              </a>
-            </div>
-          </div>
-
-          {/* Follow Us (Desktop) */}
-          <div className="hidden lg:flex flex-col text-center lg:text-left">
-            <h4 className="font-bold text-lg mb-4">Follow Us</h4>
-            <div className="flex justify-center lg:justify-start space-x-2.5 text-2xl">
-              <a href="#" aria-label="Facebook" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <TiSocialFacebookCircular />
-              </a>
-              <a href="#" aria-label="Telegram" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <LiaTelegram />
-              </a>
-              <a href="#" aria-label="YouTube" className="transition-colors duration-300 hover:text-[#FF7A00]">
-                <AiOutlineYoutube />
-              </a>
-            </div>
-          </div>
-
         </div>
-
-        {/* Copyright Section */}
-        <div className="mt-8 pt-4 border-t border-t-[#c4d4e3] text-[#1A5276]">
-          <div className="text-center text-sm py-2">
+       {/* Copyright Section */}
+       <div className="mt-8 pt-4 border-t border-t-[#c4d4e3] text-[#1A5276] bg-[#EFF7FF]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-[#1A5276] text-sm py-2">
             <p className="flex justify-center items-center space-x-1">
               <span className="text-xl">©</span>
               <span>2025 JobCollab. All rights reserved.</span>
             </p>
           </div>
-        </div>
-
+       </div>
       </div>
     </footer>
   );
