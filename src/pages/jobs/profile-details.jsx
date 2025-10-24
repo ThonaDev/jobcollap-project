@@ -48,6 +48,7 @@ const FormInput = ({
   register,
   errors,
   placeholder = "",
+  disabled = false,
 }) => (
   <div className="flex flex-col">
     <label htmlFor={id} className="text-sm font-normal text-[#1A5276] mb-1">
@@ -58,9 +59,10 @@ const FormInput = ({
       id={id}
       {...register(id)}
       placeholder={placeholder}
+      disabled={disabled}
       className={`px-3 py-2 border border-[#1A5276] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A5276] text-[#1A5276] transition duration-150 ease-in-out hover:border-[#149AC5] ${
         errors[id] ? "border-red-500" : ""
-      }`}
+      } ${disabled ? "bg-gray-100 cursor-not-allowed opacity-70" : ""}`}
     />
     {errors[id] && (
       <p className="text-red-500 text-sm mt-1">{errors[id].message}</p>
@@ -210,8 +212,15 @@ const ProfileDetail = () => {
     "https://placehold.co/200x200"
   );
   const [hasFallback, setHasFallback] = useState(false);
-  const [cvFileName, setCvFileName] = useState(null);
+  const [originalCvFileName, setOriginalCvFileName] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const DEFAULT_CV_PLACEHOLDER = "Drag and drop your CV here or click to upload (PDF)";
+  const cvDisplayName = originalCvFileName
+    ? originalCvFileName
+    : latestCV?.fileUrl?.split("/").pop()
+    ? latestCV.fileUrl.split("/").pop()
+    : DEFAULT_CV_PLACEHOLDER;
 
   useEffect(() => {
     if (userData) {
@@ -244,12 +253,12 @@ const ProfileDetail = () => {
         setProfileImage(profileUrl);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, reset]);
 
   useEffect(() => {
     if (latestCV) {
-      console.log("Latest CV:", latestCV);
-      console.log("CV fileUrl:", latestCV.fileUrl);
+      console.log("Latest CV fetched from server:", latestCV.fileUrl);
     } else if (cvError) {
       console.error("CV fetch error:", cvError);
     }
@@ -272,23 +281,24 @@ const ProfileDetail = () => {
     }
   };
 
-  const handleCVChange = (file) => {
+  const handleCVChange = (eventFile) => {
+    const file = eventFile || cvInputRef.current?.files[0];
     if (file) {
       if (file.type !== "application/pdf") {
         toast.error("Please upload a valid PDF file.");
+        cvInputRef.current.value = null;
+        setOriginalCvFileName(null);
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
         toast.error("CV file size must be less than 10MB.");
+        cvInputRef.current.value = null;
+        setOriginalCvFileName(null);
         return;
       }
-      setCvFileName(file.name);
-      cvInputRef.current.files = new DataTransfer().files; // Clear input
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-      cvInputRef.current.files = dataTransfer.files; // Assign new file
+      setOriginalCvFileName(file.name);
     } else {
-      setCvFileName(null);
+      setOriginalCvFileName(null);
     }
   };
 
@@ -311,15 +321,14 @@ const ProfileDetail = () => {
     const file = e.dataTransfer.files[0];
     if (file) {
       handleCVChange(file);
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      cvInputRef.current.files = dataTransfer.files;
     }
   };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
-  };
-
-  const triggerCVInput = () => {
-    cvInputRef.current.click();
   };
 
   const handleViewCV = () => {
@@ -350,11 +359,14 @@ const ProfileDetail = () => {
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("Profile photo upload successful:", uploadResult);
         profileUrl = uploadResult.previewLink;
+        setProfileImage(profileUrl);
       }
 
       let cvUrl = "";
+      let uploadedCvOriginalName = null;
       if (cvInputRef.current?.files[0]) {
         const file = cvInputRef.current.files[0];
+        uploadedCvOriginalName = file.name;
         console.log("Uploading CV:", file.name);
         const uploadResult = await uploadMedia(file).unwrap();
         console.log("CV upload successful:", uploadResult);
@@ -364,48 +376,46 @@ const ProfileDetail = () => {
         }
         cvUrl = uploadResult.previewLink;
         toast.success("CV uploaded successfully!");
+        cvInputRef.current.value = null;
       }
 
-      // Build JSON body with only changed fields
       const jsonBody = {};
-      if (dirtyFields.fullName && data.fullName) {
-        jsonBody.name = data.fullName;
+      if (dirtyFields.fullName) {
+        jsonBody.name = data.fullName || "";
       }
       if (dirtyFields.email && data.email) {
         jsonBody.email = data.email;
       }
-      if (dirtyFields.contact && data.contact) {
-        jsonBody.phoneNumber = data.contact;
+      if (dirtyFields.contact) {
+        jsonBody.phoneNumber = data.contact || "";
       }
-      if (dirtyFields.jobTitle && data.jobTitle) {
+      if (dirtyFields.jobTitle) {
         const positionUuid =
           positionsData?.find((pos) => pos.title === data.jobTitle)?.uuid || "";
         jsonBody.positions = positionUuid ? [positionUuid] : [];
       }
-      if (dirtyFields.gender && data.gender) {
-        jsonBody.gender = data.gender.toUpperCase();
+      if (dirtyFields.gender) {
+        jsonBody.gender = data.gender ? data.gender.toUpperCase() : "";
       }
-      if (dirtyFields.skills && data.skills) {
+      if (dirtyFields.skills) {
         const skillUuids = data.skills
-          .map(
+          ?.map(
             (skillName) =>
               skillsData?.find((skill) => skill.skillName === skillName)?.uuid
           )
-          .filter(Boolean);
+          .filter(Boolean) || [];
         jsonBody.skillUuids = skillUuids;
       }
-      if (dirtyFields.bio && data.bio) {
-        jsonBody.bio = data.bio;
+      if (dirtyFields.bio) {
+        jsonBody.bio = data.bio || "";
       }
       if (profileUrl && profileUrl !== userData?.profile) {
         jsonBody.profile = profileUrl;
       }
-      // Always include required fields to avoid breaking the API
       jsonBody.coverPhoto = userData?.coverPhoto || "";
       jsonBody.isOtpAuthentication = false;
       jsonBody.expectedSalary = 0;
 
-      // Only send update if there are changes
       if (Object.keys(jsonBody).length > 3 || profileUrl !== userData?.profile) {
         console.log("Submitting user update JSON:", jsonBody);
         const updateResult = await updateUser({
@@ -425,6 +435,9 @@ const ProfileDetail = () => {
         const cvResult = await createCV(cvBody).unwrap();
         console.log("CV creation successful:", cvResult);
         toast.success("CV saved successfully!");
+        if (uploadedCvOriginalName) {
+          setOriginalCvFileName(uploadedCvOriginalName);
+        }
       }
     } catch (error) {
       console.error(
@@ -461,7 +474,6 @@ const ProfileDetail = () => {
     }
   };
 
-  // Prepare position options
   const positionOptions = positionsData
     ? [
         ...positionsData.map((pos) => ({
@@ -472,7 +484,6 @@ const ProfileDetail = () => {
       ]
     : [{ value: "Others", label: "Others" }];
 
-  // Prepare skill options
   const skillOptions = skillsData
     ? [
         ...skillsData.map((skill) => ({
@@ -558,6 +569,7 @@ const ProfileDetail = () => {
               register={register}
               errors={errors}
               placeholder="Email"
+              disabled={true}
             />
             <FormInput
               label="Contact"
@@ -661,7 +673,8 @@ const ProfileDetail = () => {
             />
           </div>
         </div>
-        {/* Upload CV */}
+
+        {/* --- Upload CV --- */}
         <div className="pt-4">
           <h2 className="text-xl font-medium text-[#1A5276] mb-3">Upload CV</h2>
           <div
@@ -688,18 +701,17 @@ const ProfileDetail = () => {
               className="flex flex-col items-center justify-center text-[#1A5276] cursor-pointer"
             >
               <FiUploadCloud className="w-8 h-8 mb-2" />
-              <span className="font-medium text-md">
-                {cvFileName
-                  ? cvFileName
-                  : "Drag and drop your CV here or click to upload (PDF)"}
-              </span>
+              <span className="font-medium text-md">{cvDisplayName}</span>
             </label>
           </div>
           <div className="mt-3 text-center">
             <button
               type="button"
               onClick={handleViewCV}
-              className="flex items-center justify-center px-4 py-2 bg-[#1A5276] text-white font-medium text-md rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out"
+              disabled={!latestCV?.fileUrl}
+              className={`flex items-center mx-auto justify-center px-4 py-2 bg-[#1A5276] text-white font-medium text-md rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out ${
+                !latestCV?.fileUrl ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <FiEye className="w-5 h-5 mr-2" />
               View my current CV

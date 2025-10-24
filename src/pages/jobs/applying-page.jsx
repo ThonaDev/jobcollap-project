@@ -1,57 +1,52 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiEye } from "react-icons/fi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import {
   useGetUserQuery,
   useGetLatestUserCVQuery,
 } from "../../features/api/apiSlice";
 import { useApplyForJobMutation } from "../../features/job/jobSlice";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { FiEye } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
 
 const ApplyJob = ({ jobUuid, onClose }) => {
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch user data to get user UUID
-  const {
-    data: userData,
-    isLoading: userLoading,
-    error: userError,
-  } = useGetUserQuery();
-  console.log("userData:", userData);
+  // Fetch user data
+  const { data: userData, isLoading: userLoading, error: userError } =
+    useGetUserQuery();
 
-  // Fetch the latest CV
+  // Fetch latest CV
   const {
     data: latestCV,
     isLoading: cvLoading,
     error: cvError,
-  } = useGetLatestUserCVQuery(userData?.uuid, {
-    skip: !userData?.uuid,
-  });
-  console.log("latestCV:", latestCV);
-  console.log("cvError:", cvError);
+  } = useGetLatestUserCVQuery(userData?.uuid, { skip: !userData?.uuid });
 
   // Apply for job mutation
   const [applyForJob, { isLoading: applyLoading }] = useApplyForJobMutation();
 
   const handleViewCV = () => {
-    if (latestCV && latestCV.fileUrl) {
-      console.log("Attempting to open CV:", latestCV.fileUrl);
-      if (!latestCV.fileUrl.toLowerCase().endsWith(".pdf")) {
-        toast.error("Invalid CV file format. Please upload a valid PDF.", {
-          position: "top-center",
-          autoClose: 3000,
-        });
-        return;
-      }
-      window.open(latestCV.fileUrl, "_blank");
-    } else {
+    if (!latestCV || !latestCV.fileUrl) {
       toast.error("No CV found. Please upload a CV in your profile first.", {
         position: "top-center",
         autoClose: 3000,
       });
+      return;
     }
+
+    if (!latestCV.fileUrl.toLowerCase().endsWith(".pdf")) {
+      toast.error("Invalid CV file format. Please upload a valid PDF.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    window.open(latestCV.fileUrl, "_blank");
   };
 
   const handleConfirm = async () => {
@@ -65,25 +60,9 @@ const ApplyJob = ({ jobUuid, onClose }) => {
       return;
     }
 
-    if (!latestCV) {
-      setError("⚠️ No CV available. Please upload a CV in your profile first.");
-      console.log("No CV data returned from useGetLatestUserCVQuery");
-      toast.error(
-        "No CV available. Please upload a CV in your profile first.",
-        {
-          position: "top-center",
-          autoClose: 3000,
-        }
-      );
-      return;
-    }
-
-    if (!latestCV.uuid) {
-      setError(
-        "⚠️ CV data is invalid (missing ID). Please upload a new CV in your profile."
-      );
-      console.log("latestCV exists but missing uuid:", latestCV);
-      toast.error("CV data is invalid (missing ID). Please upload a new CV.", {
+    if (!latestCV?.uuid) {
+      setError("⚠️ No valid CV available. Please upload a new CV in your profile.");
+      toast.error("No valid CV available. Please upload in your profile first.", {
         position: "top-center",
         autoClose: 3000,
       });
@@ -91,63 +70,54 @@ const ApplyJob = ({ jobUuid, onClose }) => {
     }
 
     try {
-      console.log(
-        "Applying for job UUID:",
-        jobUuid,
-        "with CV UUID:",
-        latestCV.uuid,
-        "user UUID:",
-        userData.uuid
-      );
-      const result = await applyForJob({
+      await applyForJob({
         userUuid: userData.uuid,
         jobUuid,
         cvUuid: latestCV.uuid,
         coverLetterUrl: null,
       }).unwrap();
-      console.log("Application success result:", result);
-      toast.success("Job application submitted successfully!", {
+
+      toast.success("🎉 Applied Job Successfully!", {
         position: "top-center",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
       });
-      onClose();
-    } catch (error) {
-      console.error("Apply error:", error);
-      if (error.status === 401) {
+
+      // Show success message on top
+      setSuccess(true);
+
+      // Close the modal after 2 seconds
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 2000);
+    } catch (err) {
+      console.error("Apply error:", err);
+
+      if (err.status === 401) {
         toast.error("Unauthorized. Please log in again.", {
           position: "top-center",
           autoClose: 3000,
         });
         setTimeout(() => navigate("/login"), 3000);
-      } else if (error.status === 400) {
+      } else if (err.status === 400) {
         toast.error(
-          error?.data?.message ||
+          err?.data?.message ||
             "Invalid request. Please check your CV and try again.",
-          {
-            position: "top-center",
-            autoClose: 3000,
-          }
+          { position: "top-center", autoClose: 3000 }
         );
       } else {
         toast.error(
-          error?.data?.message || "Failed to apply for job. Please try again.",
-          {
-            position: "top-center",
-            autoClose: 3000,
-          }
+          err?.data?.message ||
+            "Failed to apply for job. Please try again.",
+          { position: "top-center", autoClose: 3000 }
         );
       }
     }
   };
 
-  const handleCancel = () => {
-    onClose();
-  };
+  const handleCancel = () => onClose();
 
+  // Loading state
   if (userLoading || cvLoading || applyLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
@@ -158,6 +128,21 @@ const ApplyJob = ({ jobUuid, onClose }) => {
     );
   }
 
+
+  // Success message (top position)
+  if (success) {
+    return (
+      <div className="fixed inset-0 flex items-start justify-center bg-black/40 z-50">
+        <div className="mt-10 bg-white rounded-xl shadow-lg w-96 p-6 text-center max-w-full animate-fadeIn">
+          <p className="text-[#1A5276] text-lg font-semibold">
+            🎉 Applied Job Successfully!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
   if (userError || cvError) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
@@ -180,7 +165,7 @@ const ApplyJob = ({ jobUuid, onClose }) => {
           APPLYING JOB
         </h2>
         <p className="text-[#1A5276] mb-6 text-base">
-          Do you want to apply this job?
+          Do you want to apply for this job?
         </p>
 
         <div className="mb-6">
@@ -192,11 +177,11 @@ const ApplyJob = ({ jobUuid, onClose }) => {
             onClick={handleViewCV}
             className="flex items-center justify-center w-full px-6 py-3 bg-[#1A5276] text-white font-medium text-base rounded-lg shadow-md hover:bg-[#149AC5] focus:outline-none focus:ring-2 focus:ring-[#149AC5] transition duration-150 ease-in-out"
           >
-            <FiEye className="w-6 h-6 mr-2" />
-            View current CV
+            <FiEye className="w-6 h-6 mr-2" /> View current CV
           </button>
           <p className="mt-3 text-sm text-[#1A5276]">
-            If you want to upload new, please upload in your profile details
+            If you want to upload a new CV, please upload it in your profile
+            details.
           </p>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         </div>
@@ -211,12 +196,13 @@ const ApplyJob = ({ jobUuid, onClose }) => {
           </button>
           <button
             onClick={handleCancel}
-            className="px-6 py-3 rounded-full border hover:border-[#149AC5] border-gray-400 text-[#1A5276] text-base hover:text-[#149AC5] transition"
+            className="px-6 py-3 rounded-full border border-gray-400 text-[#1A5276] text-base hover:border-[#149AC5] hover:text-[#149AC5] transition"
           >
             Cancel
           </button>
         </div>
       </div>
+
       <ToastContainer
         position="top-center"
         autoClose={3000}

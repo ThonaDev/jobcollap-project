@@ -12,7 +12,6 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearCredentials } from "../../features/auth/authSlide";
-import { useLogoutMutation } from "../../features/api/apiSlice";
 import { useGetAllJobsQuery } from "../../features/job/jobSlice";
 import { clearTokens } from "../../utils/tokenUtils";
 import { signOut } from "firebase/auth";
@@ -31,10 +30,9 @@ const NavBar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const profileRef = useRef(null);
   const searchRef = useRef(null);
-  const suggestionRef = useRef(null); // New ref for suggestion dropdown
+  const suggestionRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [logout] = useLogoutMutation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { data: allJobsData, isLoading: allJobsLoading } = useGetAllJobsQuery();
   const username = user?.name || "My Profile";
@@ -51,7 +49,7 @@ const NavBar = () => {
         suggestionRef.current &&
         !suggestionRef.current.contains(event.target)
       ) {
-        console.log("Clicked outside search and suggestions, closing suggestions"); // Debug
+        console.log("Clicked outside search and suggestions, closing suggestions");
         setShowSuggestions(false);
       }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -68,7 +66,7 @@ const NavBar = () => {
       const lowerQuery = searchQuery.trim().toLowerCase();
       const uniqueSuggestions = new Set();
 
-      jobs.forEach(job => {
+      jobs.forEach((job) => {
         if (job.jobTitle?.toLowerCase().includes(lowerQuery)) {
           uniqueSuggestions.add(job.jobTitle);
         }
@@ -78,13 +76,18 @@ const NavBar = () => {
         if (job.workingTime?.toLowerCase().includes(lowerQuery)) {
           uniqueSuggestions.add(job.workingTime);
         }
-        if (job.requirementExperience === 0 && 'no experience'.includes(lowerQuery)) {
-          uniqueSuggestions.add('No experience');
+        if (job.requirementExperience === 0 && "no experience".includes(lowerQuery)) {
+          uniqueSuggestions.add("No experience");
         }
-        if (typeof job.requirementExperience === 'number' && `${job.requirementExperience} year`.includes(lowerQuery)) {
-          uniqueSuggestions.add(`${job.requirementExperience} year${job.requirementExperience > 1 ? 's' : ''} experiences`);
+        if (
+          typeof job.requirementExperience === "number" &&
+          `${job.requirementExperience} year`.includes(lowerQuery)
+        ) {
+          uniqueSuggestions.add(
+            `${job.requirementExperience} year${job.requirementExperience > 1 ? "s" : ""} experiences`
+          );
         }
-        if (typeof job.salary === 'number' && `${job.salary}`.includes(lowerQuery)) {
+        if (typeof job.salary === "number" && `${job.salary}`.includes(lowerQuery)) {
           uniqueSuggestions.add(`${job.salary.toFixed(0)}$`);
         }
       });
@@ -106,14 +109,16 @@ const NavBar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth); // Firebase sign-out
       dispatch(clearCredentials());
       clearTokens();
       toast.success("Logged out successfully!", {
         position: "top-center",
         autoClose: 1000,
+        onClose: () => {
+          navigate("/"); // Navigate after toast closes
+        },
       });
-      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
       dispatch(clearCredentials());
@@ -121,13 +126,15 @@ const NavBar = () => {
       toast.error("Logout failed. Please try again.", {
         position: "top-center",
         autoClose: 3000,
+        onClose: () => {
+          navigate("/"); // Navigate after toast closes
+        },
       });
-      navigate("/");
     }
   };
 
   const handleSearch = (query = searchQuery) => {
-    console.log("handleSearch called with query:", query); // Debug
+    console.log("handleSearch called with query:", query);
     if (query.trim()) {
       navigate(`/jobs?query=${encodeURIComponent(query)}`);
       setSearchQuery("");
@@ -138,7 +145,7 @@ const NavBar = () => {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      console.log("Enter key pressed with query:", searchQuery); // Debug
+      console.log("Enter key pressed with query:", searchQuery);
       handleSearch();
     }
   };
@@ -146,7 +153,7 @@ const NavBar = () => {
   const handleSuggestionClick = (e, suggestion) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Suggestion clicked:", suggestion); // Debug
+    console.log("Suggestion clicked:", suggestion);
     setSearchQuery(suggestion);
     handleSearch(suggestion);
   };
@@ -156,7 +163,7 @@ const NavBar = () => {
       <div className="flex items-center">
         <NavLink to="/">
           <img
-            src={logo} // Use imported logo
+            src={logo}
             alt="JOBCOLLAP Logo"
             className="h-10 md:h-12 mr-4 object-contain"
           />
@@ -206,7 +213,7 @@ const NavBar = () => {
                 <div
                   key={index}
                   onClick={(e) => handleSuggestionClick(e, suggestion)}
-                  onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from closing dropdown
+                  onMouseDown={(e) => e.stopPropagation()}
                   className="p-3 hover:bg-gray-100 cursor-pointer text-[#1A5276]"
                 >
                   {suggestion}
@@ -216,13 +223,13 @@ const NavBar = () => {
           )}
         </div>
         <div className="flex items-center space-x-4 text-[#1A5276]" ref={profileRef}>
-          {/* <button
+          <button
             aria-label="Toggle dark mode"
             className="p-2 hover:bg-gray-100 rounded-full hover:text-[#FF7A00] transition-colors"
             onClick={toggleDarkMode}
           >
             {darkMode ? <FiSun size={24} /> : <FiMoon size={24} />}
-          </button> */}
+          </button>
 
           <div className="relative">
             <button

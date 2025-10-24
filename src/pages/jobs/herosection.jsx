@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import NavBar from "../../components/layouts/navbar-afterLogin";
+import Sokeang from "../../assets/Sokkeang.jpg";
 
 const Herosection = () => {
   return (
@@ -31,7 +32,8 @@ const Herosection = () => {
         <div className="relative flex justify-center mt-10 md:mt-0">
           <div className="rounded-full border-4 border-blue-200 p-2">
             <img
-              src="https://job-api.sokpheng.com/api/v1/medias/preview/55dfe748-f37a-44c5-a775-9330b9b9cae3.jpg"
+              // src="https://job-api.sokpheng.com/api/v1/medias/preview/55dfe748-f37a-44c5-a775-9330b9b9cae3.jpg"
+              src={Sokeang}
               alt="Professional"
               className="rounded-full w-40 sm:w-52 md:w-64 lg:w-72 xl:w-80 h-40 sm:h-52 md:h-64 lg:h-72 xl:h-80 object-cover shadow-lg"
             />
