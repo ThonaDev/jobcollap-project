@@ -1,53 +1,107 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import VerifyImage from "../../assets/verify.png";
 import JOBCollapLogo from "../../assets/jobCollapLogo.png";
 
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+const resetPasswordSchema = z
+  .object({
+    code: z
+      .string()
+      .nonempty("Please fill out this field")
+      .length(8, "Verification code must be exactly 8 digits")
+      .regex(/^\d{8}$/, "Verification code must contain only digits"),
+    newPassword: z
+      .string()
+      .nonempty("Please fill out this field")
+      .min(8, "Password must be at least 8 characters long")
+      .regex(
+        strongPasswordRegex,
+        "Password must include an uppercase letter, a lowercase letter, a number, and a symbol"
+      ),
+    confirmPassword: z.string().nonempty("Please fill out this field"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export default function ResetPassword() {
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState(""); // ✅ inline error
-  const [confirmError, setConfirmError] = useState("");   // ✅ inline error
   const navigate = useNavigate();
+  const inputRefs = useRef([]);
 
-  // ✅ Password regex
-  const strongPasswordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      code: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
-  const handleReset = async (e) => {
+  // Handle OTP input change
+  const handleOtpChange = (index, value) => {
+    if (/^[0-9]?$/.test(value)) {
+      const newOtp = [...otp];
+      newOtp[index] = value;
+      setOtp(newOtp);
+
+      // Update form value for code
+      const newCode = newOtp.join("");
+      setValue("code", newCode, { shouldValidate: true });
+
+      // Move to next input if value is entered
+      if (value && index < 7) {
+        inputRefs.current[index + 1].focus();
+      }
+    }
+  };
+
+  // Handle backspace to move to previous input
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  // Handle paste event for OTP
+  const handlePaste = (e) => {
     e.preventDefault();
-    const forgotPasswordToken = localStorage.getItem("forgotPasswordToken");
-
-    setPasswordError(""); // reset errors
-    setConfirmError("");
-
-    if (!code || !newPassword || !confirmPassword) {
-      toast.warn("⚠️ Please fill in all fields.", {
+    const pastedData = e.clipboardData.getData("text").trim();
+    if (/^\d{8}$/.test(pastedData)) {
+      const newOtp = pastedData.split("").slice(0, 8);
+      setOtp(newOtp);
+      setValue("code", pastedData, { shouldValidate: true });
+      inputRefs.current[7].focus();
+    } else {
+      toast.warn("⚠️ Please paste a valid 8-digit code.", {
         position: "top-center",
         autoClose: 2500,
       });
-      return;
     }
+  };
 
-    if (!strongPasswordRegex.test(newPassword)) {
-      setPasswordError(
-        "Password must be strong (at least 8 characters, include uppercase, lowercase, number, and symbol)"
-      );
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setConfirmError("Passwords do not match!");
-      return;
-    }
+  // Handle form submission
+  const handleReset = async (data) => {
+    const forgotPasswordToken = localStorage.getItem("forgotPasswordToken");
 
     try {
       setLoading(true);
@@ -55,21 +109,18 @@ export default function ResetPassword() {
       const response = await axios.put(
         `${import.meta.env.VITE_BASE_URL}/auth/update-forgot-password`,
         {
-          code,
+          code: data.code,
           forgotPasswordToken,
-          newPassword,
-          confirmedPassword: confirmPassword,
+          newPassword: data.newPassword,
+          confirmedPassword: data.confirmPassword,
         }
       );
 
       if (response.status === 200) {
-        toast.success(
-          "✅ Password updated successfully! Redirecting to login...",
-          {
-            position: "top-center",
-            autoClose: 2000,
-          }
-        );
+        toast.success("✅ Password updated successfully! Redirecting to login...", {
+          position: "top-center",
+          autoClose: 2000,
+        });
 
         localStorage.removeItem("forgotPasswordToken");
 
@@ -93,8 +144,13 @@ export default function ResetPassword() {
     }
   };
 
+  // Auto-focus first OTP input on mount
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-blue-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-white px-4">
       <div className="w-full h-auto max-w-5xl bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row">
         {/* Left Side Illustration */}
         <div className="relative hidden md:flex md:w-1/2 flex-col items-center justify-start bg-[#ECF2FF] p-8">
@@ -113,29 +169,41 @@ export default function ResetPassword() {
             Reset Your Password
           </h2>
 
-          <form onSubmit={handleReset} className="space-y-5 flex flex-col items-center">
-            {/* Code Input */}
+          <form onSubmit={handleSubmit(handleReset)} className="space-y-5 flex flex-col items-center">
+            {/* OTP Input */}
             <div className="w-full sm:w-11/12 relative">
               <label className="block text-md font-bold text-[#1A5276]">
                 Verification Code
               </label>
-              <input
-                type="text"
-                placeholder="Enter code from your email"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full p-2 border border-[#1A5276] rounded-lg mt-1 bg-white focus:ring-2 focus:ring-[#149AC5] outline-none"
-              />
+              <div className="flex justify-between gap-2 mt-1" onPaste={handlePaste}>
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    type="text"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    className="w-10 h-10 text-center border border-[#1A5276] rounded-lg bg-white focus:ring-2 focus:ring-[#149AC5] outline-none"
+                    placeholder="-"
+                  />
+                ))}
+              </div>
+              {errors.code && (
+                <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>
+              )}
             </div>
 
             {/* New Password */}
             <div className="w-full sm:w-11/12 relative">
-              <label className="block text-md font-bold text-[#1A5276]">New Password</label>
+              <label className="block text-md font-bold text-[#1A5276]">
+                New Password
+              </label>
               <input
                 type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                {...register("newPassword")}
                 className="w-full p-2 border border-[#1A5276] rounded-lg mt-1 bg-white focus:ring-2 focus:ring-[#149AC5] outline-none pr-10"
               />
               <button
@@ -145,19 +213,20 @@ export default function ResetPassword() {
               >
                 {showNewPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
-              {passwordError && (
-                <p className="text-red-600 text-sm mt-1">{passwordError}</p>
+              {errors.newPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.newPassword.message}</p>
               )}
             </div>
 
             {/* Confirm Password */}
             <div className="w-full sm:w-11/12 relative">
-              <label className="block text-md font-bold text-[#1A5276]">Confirm Password</label>
+              <label className="block text-md font-bold text-[#1A5276]">
+                Confirm Password
+              </label>
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                {...register("confirmPassword")}
                 className="w-full p-2 border border-[#1A5276] rounded-lg mt-1 bg-white focus:ring-2 focus:ring-[#149AC5] outline-none pr-10"
               />
               <button
@@ -167,7 +236,9 @@ export default function ResetPassword() {
               >
                 {showConfirmPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
-              {confirmError && <p className="text-red-600 text-sm mt-1">{confirmError}</p>}
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+              )}
             </div>
 
             {/* Update Button */}
